@@ -26,17 +26,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
-      GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),
+      GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
+      GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
       GoRoute(path: '/book/:shopId', builder: (_, state) => BookingScreen(shopId: state.pathParameters['shopId']!)),
       ShellRoute(
-        builder: (_, __, child) => DashboardShell(child: child),
+        builder: (_, _, child) => DashboardShell(child: child),
         routes: [
-          GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
-          GoRoute(path: '/availability', builder: (_, __) => const AvailabilityScreen()),
-          GoRoute(path: '/waiting-list', builder: (_, __) => const WaitingListScreen()),
-          GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),
-          GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+          GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
+          GoRoute(path: '/availability', builder: (_, _) => const AvailabilityScreen()),
+          GoRoute(path: '/waiting-list', builder: (_, _) => const WaitingListScreen()),
+          GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
+          GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
         ],
       ),
     ],
