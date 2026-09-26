@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Shop {
-  const Shop({required this.id, required this.name, required this.ownerUid, required this.ownerName, required this.email, required this.lineConnected});
+  const Shop({required this.id, required this.name, required this.ownerUid, required this.ownerName, required this.email, required this.lineConnected, this.phone = '', this.address = ''});
 
   final String id;
   final String name;
@@ -9,6 +9,7 @@ class Shop {
   final String ownerName;
   final String email;
   final bool lineConnected;
+  final String phone, address;
 
   factory Shop.fromDocument(DocumentSnapshot<Map<String, dynamic>> document) {
     final data = document.data()!;
@@ -19,6 +20,7 @@ class Shop {
       ownerName: data['ownerName'] as String? ?? '',
       email: data['email'] as String? ?? '',
       lineConnected: data['lineConnected'] as bool? ?? false,
+      phone: data['phone'] as String? ?? '', address: data['address'] as String? ?? '',
     );
   }
 }

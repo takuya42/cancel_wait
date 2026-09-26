@@ -4,32 +4,58 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function userData() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
     function belongsTo(shopId) { return signedIn() && userData().shopId == shopId; }
+    function validSlot(data) {
+      return data.menuName is string && data.staffName is string
+        && data.startAt is timestamp && data.endAt is timestamp && data.startAt < data.endAt
+        && data.capacity is int && data.capacity > 0
+        && data.remainingCapacity is int && data.remainingCapacity >= 0
+        && data.remainingCapacity <= data.capacity
+        && data.status in ['open', 'full', 'closed'];
+    }
 
     match /users/{userId} {
-      allow create: if signedIn()
-        && request.auth.uid == userId
-        && request.resource.data.uid == userId
-        && request.resource.data.role == 'owner'
+      allow create: if signedIn() && request.auth.uid == userId
+        && request.resource.data.uid == userId && request.resource.data.role == 'owner'
         && getAfter(/databases/$(database)/documents/shops/$(request.resource.data.shopId)).data.ownerUid == request.auth.uid;
       allow read: if signedIn() && request.auth.uid == userId;
       allow update, delete: if false;
     }
 
     match /shops/{shopId} {
-      allow create: if signedIn()
-        && request.resource.data.ownerUid == request.auth.uid
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
         && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId == shopId;
-      allow read: if belongsTo(shopId);
-      allow update: if belongsTo(shopId)
-        && resource.data.ownerUid == request.auth.uid
+      // Public get is required for the customer booking page. Never store secrets on this document.
+      allow get: if true;
+      allow list: if belongsTo(shopId);
+      allow update: if belongsTo(shopId) && resource.data.ownerUid == request.auth.uid
         && request.resource.data.ownerUid == resource.data.ownerUid;
       allow delete: if belongsTo(shopId) && resource.data.ownerUid == request.auth.uid;
 
-      match /{collection}/{documentId} {
-        allow read, write: if belongsTo(shopId);
+      match /availableSlots/{slotId} {
+        allow read: if belongsTo(shopId) || resource.data.status == 'open';
+        allow create, delete: if belongsTo(shopId);
+        allow update: if (belongsTo(shopId) && validSlot(request.resource.data)) || (
+          !signedIn() && validSlot(request.resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['remainingCapacity','status','updatedAt'])
+          && resource.data.status == 'open' && resource.data.remainingCapacity > 0
+          && request.resource.data.remainingCapacity == resource.data.remainingCapacity - 1
+          && request.resource.data.status == (request.resource.data.remainingCapacity == 0 ? 'full' : 'open'));
       }
+      match /reservations/{reservationId} {
+        allow read, update, delete: if belongsTo(shopId);
+        allow create: if belongsTo(shopId) || (
+          request.resource.data.keys().hasOnly(['slotId','name','phone','status','createdAt'])
+          && request.resource.data.slotId is string && request.resource.data.name is string
+          && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+          && request.resource.data.phone is string && request.resource.data.phone.size() <= 30
+          && request.resource.data.status == 'confirmed'
+          // A public reservation is valid only in the same atomic transaction
+          // that consumes exactly one seat from the referenced open slot.
+          && getAfter(/databases/$(database)/documents/shops/$(shopId)/availableSlots/$(request.resource.data.slotId)).data.remainingCapacity
+             == get(/databases/$(database)/documents/shops/$(shopId)/availableSlots/$(request.resource.data.slotId)).data.remainingCapacity - 1);
+      }
+      match /{collection}/{documentId} { allow read, write: if belongsTo(shopId); }
     }
-
     match /{document=**} { allow read, write: if false; }
   }
 }
