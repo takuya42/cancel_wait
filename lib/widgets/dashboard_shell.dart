@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class DashboardShell extends StatelessWidget {
+import '../providers/auth_providers.dart';
+
+class DashboardShell extends ConsumerWidget {
   const DashboardShell({required this.child, super.key});
   final Widget child;
 
@@ -20,9 +23,12 @@ class DashboardShell extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final wide = MediaQuery.sizeOf(context).width >= 900;
-    final navigation = _Navigation(selectedIndex: _selectedIndex(context));
+    final navigation = _Navigation(selectedIndex: _selectedIndex(context), onLogout: () async {
+      await ref.read(authControllerProvider).logout();
+      if (context.mounted) context.go('/login');
+    });
     return Scaffold(
       appBar: wide ? null : AppBar(title: const _Brand(compact: true), backgroundColor: Colors.white, surfaceTintColor: Colors.transparent),
       drawer: wide ? null : Drawer(child: SafeArea(child: navigation)),
@@ -35,8 +41,9 @@ class DashboardShell extends StatelessWidget {
 }
 
 class _Navigation extends StatelessWidget {
-  const _Navigation({required this.selectedIndex});
+  const _Navigation({required this.selectedIndex, required this.onLogout});
   final int selectedIndex;
+  final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +70,7 @@ class _Navigation extends StatelessWidget {
         ),
       ),
       const Divider(height: 1),
-      ListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10), leading: const Icon(Icons.logout_rounded), title: const Text('ログアウト'), onTap: () => context.go('/login')),
+      ListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10), leading: const Icon(Icons.logout_rounded), title: const Text('ログアウト'), onTap: onLogout),
     ]);
   }
 }
