@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function userData() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function belongsTo(shopId) { return signedIn() && userData().shopId == shopId; }
+
+    match /users/{userId} {
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.uid == userId
+        && request.resource.data.role == 'owner'
+        && getAfter(/databases/$(database)/documents/shops/$(request.resource.data.shopId)).data.ownerUid == request.auth.uid;
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow update, delete: if false;
+    }
+
+    match /shops/{shopId} {
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId == shopId;
+      allow read: if belongsTo(shopId);
+      allow update: if belongsTo(shopId)
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == resource.data.ownerUid;
+      allow delete: if belongsTo(shopId) && resource.data.ownerUid == request.auth.uid;
+
+      match /{collection}/{documentId} {
+        allow read, write: if belongsTo(shopId);
+      }
+    }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}
