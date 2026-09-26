@@ -35,8 +35,9 @@ class FirestoreDashboardRepository implements DashboardRepository {
 
 class DemoDashboardRepository implements DashboardRepository {
   final _slots=StreamController<List<AvailableSlot>>.broadcast(), _customers=StreamController<List<WaitingCustomer>>.broadcast(), _notifications=StreamController<List<NotificationRecord>>.broadcast();
-  late List<AvailableSlot> slots; late List<WaitingCustomer> customers; final notifications=<NotificationRecord>[];
-  DemoDashboardRepository(){ final now=DateTime.now(); final day=DateTime(now.year,now.month,now.day+1); slots=[AvailableSlot(id:'demo-slot',startAt:DateTime(day.year,day.month,day.day,15),endAt:DateTime(day.year,day.month,day.day,16),menuName:'整体60分',staffName:'田中',capacity:2,remainingCapacity:2,memo:'',status:SlotStatus.open,createdAt:now)]; customers=[WaitingCustomer(id:'demo-customer',name:'山田 花子',preferredDate:day,preferredStartTime:'14:00',preferredEndTime:'17:00',menuName:'整体60分',phone:'090-0000-0000',lineLinked:true,memo:'',status:WaitingStatus.waiting,createdAt:now)]; }
+  final slots=<AvailableSlot>[];
+  final customers=<WaitingCustomer>[];
+  final notifications=<NotificationRecord>[];
   void _emit(){_slots.add(List.of(slots));_customers.add(List.of(customers));_notifications.add(List.of(notifications));}
   @override Stream<List<AvailableSlot>> watchSlots(String id) async* {yield slots;yield* _slots.stream;}
   @override Stream<List<WaitingCustomer>> watchCustomers(String id) async* {yield customers;yield* _customers.stream;}
