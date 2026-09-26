@@ -1,9 +1,203 @@
 import 'package:flutter/material.dart';
+
 import '../../models/available_slot.dart';
 
-class SlotFormDialog extends StatefulWidget {const SlotFormDialog({this.initial,super.key});final AvailableSlot? initial;@override State<SlotFormDialog> createState()=>_SlotFormDialogState();}
-class _SlotFormDialogState extends State<SlotFormDialog>{final key=GlobalKey<FormState>();late DateTime date;late TimeOfDay start,end;late TextEditingController menu,staff,capacity,memo;
-@override void initState(){super.initState();final s=widget.initial;date=s?.startAt??DateTime.now().add(const Duration(days:1));start=TimeOfDay.fromDateTime(s?.startAt??DateTime(2020,1,1,10));end=TimeOfDay.fromDateTime(s?.endAt??DateTime(2020,1,1,11));menu=TextEditingController(text:s?.menuName);staff=TextEditingController(text:s?.staffName);capacity=TextEditingController(text:'${s?.capacity??1}');memo=TextEditingController(text:s?.memo);}
-@override void dispose(){for(final c in [menu,staff,capacity,memo])c.dispose();super.dispose();} String fmt(TimeOfDay t)=>'${t.hour.toString().padLeft(2,'0')}:${t.minute.toString().padLeft(2,'0')}';
-@override Widget build(BuildContext context)=>AlertDialog(title:Text(widget.initial==null?'空き枠を登録':'空き枠を編集'),content:SizedBox(width:500,child:Form(key:key,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[ListTile(contentPadding:EdgeInsets.zero,title:const Text('日付'),subtitle:Text('${date.year}/${date.month}/${date.day}'),trailing:const Icon(Icons.calendar_month),onTap:()async{final d=await showDatePicker(context:context,firstDate:DateTime.now().subtract(const Duration(days:365)),lastDate:DateTime.now().add(const Duration(days:730)),initialDate:date);if(d!=null)setState(()=>date=d);}),Row(children:[Expanded(child:ListTile(contentPadding:EdgeInsets.zero,title:const Text('開始'),subtitle:Text(fmt(start)),onTap:()async{final t=await showTimePicker(context:context,initialTime:start);if(t!=null)setState(()=>start=t);})),Expanded(child:ListTile(title:const Text('終了'),subtitle:Text(fmt(end)),onTap:()async{final t=await showTimePicker(context:context,initialTime:end);if(t!=null)setState(()=>end=t);}))]),TextFormField(controller:menu,decoration:const InputDecoration(labelText:'メニュー名'),validator:_required),const SizedBox(height:12),TextFormField(controller:staff,decoration:const InputDecoration(labelText:'担当者名'),validator:_required),const SizedBox(height:12),TextFormField(controller:capacity,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'募集人数'),validator:(v)=>(int.tryParse(v??'')??0)<1?'1以上を入力してください':null),const SizedBox(height:12),TextFormField(controller:memo,maxLines:2,decoration:const InputDecoration(labelText:'メモ（任意）'))]))),actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('キャンセル')),FilledButton(onPressed:(){if(!key.currentState!.validate())return;final a=DateTime(date.year,date.month,date.day,start.hour,start.minute),b=DateTime(date.year,date.month,date.day,end.hour,end.minute);if(!b.isAfter(a)){ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('終了時間は開始時間より後にしてください')));return;}final old=widget.initial,cap=int.parse(capacity.text);Navigator.pop(context,AvailableSlot(id:old?.id??'',startAt:a,endAt:b,menuName:menu.text,staffName:staff.text,capacity:cap,remainingCapacity:old==null?cap:(old.remainingCapacity+(cap-old.capacity)).clamp(0,cap).toInt(),memo:memo.text,status:old?.status??SlotStatus.open,createdAt:old?.createdAt??DateTime.now()));},child:const Text('保存'))]);}
-String? _required(String? v)=>v==null||v.trim().isEmpty?'入力してください':null;}
+class SlotFormDialog extends StatefulWidget {
+  const SlotFormDialog({this.initial, super.key});
+
+  final AvailableSlot? initial;
+
+  @override
+  State<SlotFormDialog> createState() => _SlotFormDialogState();
+}
+
+class _SlotFormDialogState extends State<SlotFormDialog> {
+  final formKey = GlobalKey<FormState>();
+  late DateTime date;
+  late TimeOfDay start;
+  late TimeOfDay end;
+  late TextEditingController menu;
+  late TextEditingController staff;
+  late TextEditingController capacity;
+  late TextEditingController memo;
+
+  @override
+  void initState() {
+    super.initState();
+    final slot = widget.initial;
+    date = slot?.startAt ?? DateTime.now().add(const Duration(days: 1));
+    start = TimeOfDay.fromDateTime(slot?.startAt ?? DateTime(2020, 1, 1, 10));
+    end = TimeOfDay.fromDateTime(slot?.endAt ?? DateTime(2020, 1, 1, 11));
+    menu = TextEditingController(text: slot?.menuName);
+    staff = TextEditingController(text: slot?.staffName);
+    capacity = TextEditingController(text: '${slot?.capacity ?? 1}');
+    memo = TextEditingController(text: slot?.memo);
+  }
+
+  @override
+  void dispose() {
+    for (final controller in [menu, staff, capacity, memo]) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  String _formatTime(TimeOfDay time) =>
+      '${time.hour.toString().padLeft(2, '0')}:'
+      '${time.minute.toString().padLeft(2, '0')}';
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.initial == null ? '空き枠を登録' : '空き枠を編集'),
+      content: SizedBox(
+        width: 500,
+        child: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('日付'),
+                  subtitle: Text('${date.year}/${date.month}/${date.day}'),
+                  trailing: const Icon(Icons.calendar_month),
+                  onTap: _selectDate,
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('開始'),
+                        subtitle: Text(_formatTime(start)),
+                        onTap: () => _selectTime(isStart: true),
+                      ),
+                    ),
+                    Expanded(
+                      child: ListTile(
+                        title: const Text('終了'),
+                        subtitle: Text(_formatTime(end)),
+                        onTap: () => _selectTime(isStart: false),
+                      ),
+                    ),
+                  ],
+                ),
+                TextFormField(
+                  controller: menu,
+                  decoration: const InputDecoration(labelText: 'メニュー名'),
+                  validator: _required,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: staff,
+                  decoration: const InputDecoration(labelText: '担当者名'),
+                  validator: _required,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: capacity,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: '募集人数'),
+                  validator: (value) => (int.tryParse(value ?? '') ?? 0) < 1
+                      ? '1以上を入力してください'
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: memo,
+                  maxLines: 2,
+                  decoration: const InputDecoration(labelText: 'メモ（任意）'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('キャンセル'),
+        ),
+        FilledButton(onPressed: _save, child: const Text('保存')),
+      ],
+    );
+  }
+
+  Future<void> _selectDate() async {
+    final selected = await showDatePicker(
+      context: context,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 730)),
+      initialDate: date,
+    );
+    if (selected != null) setState(() => date = selected);
+  }
+
+  Future<void> _selectTime({required bool isStart}) async {
+    final selected = await showTimePicker(
+      context: context,
+      initialTime: isStart ? start : end,
+    );
+    if (selected != null) {
+      setState(() {
+        if (isStart) {
+          start = selected;
+        } else {
+          end = selected;
+        }
+      });
+    }
+  }
+
+  void _save() {
+    if (!formKey.currentState!.validate()) return;
+    final startAt = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      start.hour,
+      start.minute,
+    );
+    final endAt = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      end.hour,
+      end.minute,
+    );
+    if (!endAt.isAfter(startAt)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('終了時間は開始時間より後にしてください')),
+      );
+      return;
+    }
+
+    final oldSlot = widget.initial;
+    final newCapacity = int.parse(capacity.text);
+    Navigator.pop(
+      context,
+      AvailableSlot(
+        id: oldSlot?.id ?? '',
+        startAt: startAt,
+        endAt: endAt,
+        menuName: menu.text,
+        staffName: staff.text,
+        capacity: newCapacity,
+        remainingCapacity: oldSlot == null
+            ? newCapacity
+            : (oldSlot.remainingCapacity + (newCapacity - oldSlot.capacity))
+                  .clamp(0, newCapacity)
+                  .toInt(),
+        memo: memo.text,
+        status: oldSlot?.status ?? SlotStatus.open,
+        createdAt: oldSlot?.createdAt ?? DateTime.now(),
+      ),
+    );
+  }
+
+  String? _required(String? value) => value == null || value.trim().isEmpty
+      ? '入力してください'
+      : null;
+}

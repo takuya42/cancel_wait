@@ -1,3 +1,195 @@
-import 'package:flutter/material.dart';import 'package:flutter_riverpod/flutter_riverpod.dart';import 'package:go_router/go_router.dart';import '../../providers/dashboard_providers.dart';import '../../widgets/async_content.dart';import '../../widgets/page_header.dart';
-class HomeScreen extends ConsumerWidget{const HomeScreen({super.key});@override Widget build(BuildContext context,WidgetRef ref){final slots=ref.watch(slotsProvider),customers=ref.watch(waitingCustomersProvider),notifications=ref.watch(notificationsProvider);return SingleChildScrollView(padding:EdgeInsets.all(MediaQuery.sizeOf(context).width<600?16:32),child:Center(child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:1180),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const PageHeader(title:'おはようございます',subtitle:'今日も一日の状況を確認しましょう。'),const SizedBox(height:24),AsyncContent(value:slots,builder:(ss)=>AsyncContent(value:customers,builder:(cs)=>AsyncContent(value:notifications,builder:(ns){final now=DateTime.now();final today=ss.where((s)=>s.startAt.year==now.year&&s.startAt.month==now.month&&s.startAt.day==now.day).length;final waiting=cs.where((c)=>c.status.name=='waiting').length;final sent=ns.where((n)=>n.createdAt.year==now.year&&n.createdAt.month==now.month&&n.createdAt.day==now.day).length;return Column(children:[LayoutBuilder(builder:(_,box){final width=box.maxWidth<700?box.maxWidth:(box.maxWidth-32)/3;return Wrap(spacing:16,runSpacing:16,children:[_Card(width:width,label:'今日の空き枠',value:'$today件',icon:Icons.event_available,color:Colors.blue,onTap:()=>context.go('/availability')),_Card(width:width,label:'キャンセル待ち',value:'$waiting人',icon:Icons.people,color:Colors.purple,onTap:()=>context.go('/waiting-list')),_Card(width:width,label:'本日の通知',value:'$sent件',icon:Icons.notifications,color:Colors.green,onTap:()=>context.go('/notifications'))]);}),const SizedBox(height:28),Card(child:Padding(padding:const EdgeInsets.all(24),child:Row(children:[const Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('すぐに始めましょう',style:TextStyle(fontSize:18,fontWeight:FontWeight.bold)),SizedBox(height:6),Text('空き枠を登録すると、希望条件が一致するお客様を自動で抽出します。')])),FilledButton(onPressed:()=>context.go('/availability'),child:const Text('空き枠を登録'))]))]);}))))]))));}}
-class _Card extends StatelessWidget{const _Card({required this.width,required this.label,required this.value,required this.icon,required this.color,required this.onTap});final double width;final String label,value;final IconData icon;final Color color;final VoidCallback onTap;@override Widget build(BuildContext context)=>SizedBox(width:width,child:Card(child:InkWell(borderRadius:BorderRadius.circular(16),onTap:onTap,child:Padding(padding:const EdgeInsets.all(22),child:Row(children:[CircleAvatar(backgroundColor:color.withValues(alpha:.1),foregroundColor:color,child:Icon(icon)),const SizedBox(width:15),Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(label),Text(value,style:const TextStyle(fontSize:25,fontWeight:FontWeight.bold))])])))));}
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../providers/dashboard_providers.dart';
+import '../../widgets/async_content.dart';
+import '../../widgets/page_header.dart';
+
+class HomeScreen extends ConsumerWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final slots = ref.watch(slotsProvider);
+    final customers = ref.watch(waitingCustomersProvider);
+    final notifications = ref.watch(notificationsProvider);
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 600 ? 16 : 32),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1180),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const PageHeader(
+                title: 'おはようございます',
+                subtitle: '今日も一日の状況を確認しましょう。',
+              ),
+              const SizedBox(height: 24),
+              AsyncContent(
+                value: slots,
+                builder: (slotItems) => AsyncContent(
+                  value: customers,
+                  builder: (customerItems) => AsyncContent(
+                    value: notifications,
+                    builder: (notificationItems) {
+                      final now = DateTime.now();
+                      final today = slotItems.where((slot) {
+                        return slot.startAt.year == now.year &&
+                            slot.startAt.month == now.month &&
+                            slot.startAt.day == now.day;
+                      }).length;
+                      final waiting = customerItems
+                          .where((customer) => customer.status.name == 'waiting')
+                          .length;
+                      final sent = notificationItems.where((notification) {
+                        return notification.createdAt.year == now.year &&
+                            notification.createdAt.month == now.month &&
+                            notification.createdAt.day == now.day;
+                      }).length;
+
+                      return Column(
+                        children: [
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final width = constraints.maxWidth < 700
+                                  ? constraints.maxWidth
+                                  : (constraints.maxWidth - 32) / 3;
+                              return Wrap(
+                                spacing: 16,
+                                runSpacing: 16,
+                                children: [
+                                  _SummaryCard(
+                                    width: width,
+                                    label: '今日の空き枠',
+                                    value: '$today件',
+                                    icon: Icons.event_available,
+                                    color: Colors.blue,
+                                    onTap: () => context.go('/availability'),
+                                  ),
+                                  _SummaryCard(
+                                    width: width,
+                                    label: 'キャンセル待ち',
+                                    value: '$waiting人',
+                                    icon: Icons.people,
+                                    color: Colors.purple,
+                                    onTap: () => context.go('/waiting-list'),
+                                  ),
+                                  _SummaryCard(
+                                    width: width,
+                                    label: '本日の通知',
+                                    value: '$sent件',
+                                    icon: Icons.notifications,
+                                    color: Colors.green,
+                                    onTap: () => context.go('/notifications'),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 28),
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Row(
+                                children: [
+                                  const Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'すぐに始めましょう',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        SizedBox(height: 6),
+                                        Text(
+                                          '空き枠を登録すると、希望条件が一致するお客様を自動で抽出します。',
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  FilledButton(
+                                    onPressed: () =>
+                                        context.go('/availability'),
+                                    child: const Text('空き枠を登録'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({
+    required this.width,
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final double width;
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      child: Card(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(22),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: color.withValues(alpha: .1),
+                  foregroundColor: color,
+                  child: Icon(icon),
+                ),
+                const SizedBox(width: 15),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label),
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -25,7 +25,7 @@ final sessionStatusProvider = Provider<SessionStatus>((ref) {
   return ref.watch(authUserProvider).when(
     data: (user) => user == null ? SessionStatus.signedOut : SessionStatus.firebase,
     loading: () => SessionStatus.loading,
-    error: (_, __) => SessionStatus.signedOut,
+    error: (_, _) => SessionStatus.signedOut,
   );
 });
 
