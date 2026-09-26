@@ -101,7 +101,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   leading: const Icon(Icons.public),
                   title: const Text('顧客向け予約ページ'),
                   subtitle: SelectableText(
-                    shop == null ? '読み込み中…' : '/book/${shop.id}',
+                    shop == null ? '読み込み中…' : '/reserve/${shop.id}',
                   ),
                 ),
               ),

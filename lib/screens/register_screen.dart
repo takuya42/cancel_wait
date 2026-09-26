@@ -26,12 +26,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Future<void> _register() async {
     if (!_key.currentState!.validate()) return;
     setState(() => _loading = true);
+    ref.read(registrationInProgressProvider.notifier).start();
     User? createdUser;
     try {
       final credential = await ref.read(authRepositoryProvider).createUser(email: _email.text, password: _password.text);
       createdUser = credential.user;
       if (createdUser == null) throw StateError('User creation failed');
       await ref.read(shopRepositoryProvider).createOwnerShop(uid: createdUser.uid, shopName: _shop.text, ownerName: _owner.text, email: _email.text);
+      if (mounted) context.go('/home');
     } catch (error) {
       // Do not leave an Authentication account without its required store data.
       if (createdUser != null) {
@@ -44,6 +46,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(authErrorMessage(error))));
     } finally {
+      ref.read(registrationInProgressProvider.notifier).finish();
       if (mounted) setState(() => _loading = false);
     }
   }
