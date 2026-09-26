@@ -18,7 +18,7 @@ flutter run -d chrome \
 
 Firestore には `shops/{shopId}` と `users/{uid}` が作成されます。`users/{uid}.shopId` が、ログインユーザーがアクセス可能な店舗を決定します。ルートの `firestore.rules` を Firebase CLI でデプロイしてから利用してください。
 
-テストログインは Firebase Authentication と Firestore を一切使用せず、メモリ上のデモ状態と既存ダミーデータを使用します。リリースビルドでは自動で非表示になります。開発ビルドでも無効にする場合は `lib/config/app_config.dart` の `enableDemoLogin` を変更してください。
+テストログインは Firebase Authentication と Firestore を一切使用せず、空のインメモリ状態から各管理機能を試せます。テストモード中に登録したデータは Firestore に保存されません。リリースビルドでは自動で非表示になります。開発ビルドでも無効にする場合は `lib/config/app_config.dart` の `enableDemoLogin` を変更してください。
 
 A new Flutter project.
 
