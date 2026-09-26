@@ -1,0 +1,2 @@
+import 'package:flutter/material.dart';
+class StatusBadge extends StatelessWidget { const StatusBadge(this.text,{this.color=Colors.blue,super.key});final String text;final Color color;@override Widget build(BuildContext context)=>Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:5),decoration:BoxDecoration(color:color.withValues(alpha:.1),borderRadius:BorderRadius.circular(20)),child:Text(text,style:TextStyle(color:color,fontSize:12,fontWeight:FontWeight.w700)));}
