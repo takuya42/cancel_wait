@@ -18,6 +18,19 @@ class DemoModeNotifier extends Notifier<bool> {
 
 final isDemoModeProvider = NotifierProvider<DemoModeNotifier, bool>(DemoModeNotifier.new);
 
+class RegistrationNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void start() => state = true;
+  void finish() => state = false;
+}
+
+/// Keeps the router on the registration form while the newly authenticated
+/// user's Firestore records are being created.
+final registrationInProgressProvider =
+    NotifierProvider<RegistrationNotifier, bool>(RegistrationNotifier.new);
+
 enum SessionStatus { loading, signedOut, firebase, demo }
 
 final sessionStatusProvider = Provider<SessionStatus>((ref) {
