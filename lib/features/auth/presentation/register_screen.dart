@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -34,8 +35,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ownerName: _owner.text,
       );
       if (mounted) context.go('/dashboard');
-    } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(authErrorMessage(error))));
+    } catch (error, stackTrace) {
+      debugPrint('[RegisterScreen] Registration failed: $error');
+      debugPrintStack(
+        label: '[RegisterScreen] stackTrace',
+        stackTrace: error is RegistrationException
+            ? error.stackTrace
+            : stackTrace,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(authErrorMessage(error))),
+        );
+      }
     } finally {
       ref.read(registrationInProgressProvider.notifier).finish();
       if (mounted) setState(() => _loading = false);
