@@ -27,7 +27,7 @@ class FeatureScaffold extends StatelessWidget {
                 const SizedBox(height: 18),
                 Text(section, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
-                Text('ここに${section}の情報や操作を表示します。', style: TextStyle(color: Colors.blueGrey.shade600)),
+                Text('ここに$sectionの情報や操作を表示します。', style: TextStyle(color: Colors.blueGrey.shade600)),
               ]),
             )),
           )).toList());
