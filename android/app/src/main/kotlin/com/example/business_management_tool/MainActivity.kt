@@ -1,4 +1,4 @@
-package com.example.cancel_wait
+package com.example.business_management_tool
 
 import io.flutter.embedding.android.FlutterActivity
 
