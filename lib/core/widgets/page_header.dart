@@ -16,7 +16,7 @@ class PageHeader extends StatelessWidget {
         const SizedBox(height: 6),
         Text(subtitle, style: TextStyle(color: Colors.blueGrey.shade600)),
       ]),
-      if (action != null) action!,
+      ?action,
     ],
   );
 }
