@@ -36,9 +36,14 @@ class FinanceListScreen extends ConsumerWidget {
             entries.when(
               loading: () => const Card(child: SizedBox(height: 260, child: Center(child: CircularProgressIndicator()))),
               error: (error, _) => _ErrorCard(onRetry: () => ref.invalidate(sales ? salesProvider : expensesProvider)),
-              data: (items) => items.isEmpty
-                  ? _EmptyCard(label: label, onAdd: () => _edit(context, ref))
-                  : _EntryList(items: items, type: type, onEdit: (entry) => _edit(context, ref, entry), onDelete: (entry) => _delete(context, ref, entry)),
+              data: (items) => Column(children: [
+                _TotalCard(label: label, items: items, type: type),
+                const SizedBox(height: 16),
+                if (items.isEmpty)
+                  _EmptyCard(label: label, onAdd: () => _edit(context, ref))
+                else
+                  _EntryList(items: items, type: type, onEdit: (entry) => _edit(context, ref, entry), onDelete: (entry) => _delete(context, ref, entry)),
+              ]),
             ),
           ]),
         ),
@@ -82,6 +87,33 @@ class FinanceListScreen extends ConsumerWidget {
   void _message(BuildContext context, String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
 
+class _TotalCard extends StatelessWidget {
+  const _TotalCard({required this.label, required this.items, required this.type});
+  final String label;
+  final List<FinanceEntry> items;
+  final EntryType type;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = items.fold<int>(0, (sum, item) => sum + item.amount);
+    final color = type == EntryType.sale ? const Color(0xFF2563EB) : const Color(0xFFF59E0B);
+    return Card(child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Row(children: [
+        Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: color.withValues(alpha: .1), borderRadius: BorderRadius.circular(12)), child: Icon(type == EntryType.sale ? Icons.trending_up_rounded : Icons.receipt_long_outlined, color: color)),
+        const SizedBox(width: 16),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('$label合計', style: TextStyle(color: Colors.blueGrey.shade600)),
+          const SizedBox(height: 4),
+          Text(formatCurrency(total), style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+        ]),
+        const Spacer(),
+        Text('${items.length}件', style: TextStyle(color: Colors.blueGrey.shade600, fontWeight: FontWeight.w600)),
+      ]),
+    ));
+  }
+}
+
 class _EntryList extends StatelessWidget {
   const _EntryList({required this.items, required this.type, required this.onEdit, required this.onDelete});
   final List<FinanceEntry> items;
@@ -90,31 +122,41 @@ class _EntryList extends StatelessWidget {
   final ValueChanged<FinanceEntry> onDelete;
 
   @override
-  Widget build(BuildContext context) => Card(
-    child: Column(children: [
-      Padding(padding: const EdgeInsets.all(20), child: Row(children: [
-        Text('${items.length}件', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        const Spacer(),
-        Text('合計 ${formatCurrency(items.fold<int>(0, (sum, item) => sum + item.amount))}', style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),
-      ])),
-      const Divider(height: 1),
-      ...items.map((entry) => Column(children: [
+  Widget build(BuildContext context) => LayoutBuilder(builder: (context, constraints) {
+    if (constraints.maxWidth >= 720) return _EntryTable(items: items, onEdit: onEdit, onDelete: onDelete);
+    return Column(children: items.map((entry) => Padding(padding: const EdgeInsets.only(bottom: 12), child: Card(child: Column(children: [
         ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           leading: CircleAvatar(backgroundColor: type == EntryType.sale ? const Color(0xFFE8F1FF) : const Color(0xFFFFF1E5), child: Icon(type == EntryType.sale ? Icons.arrow_upward : Icons.arrow_downward, color: type == EntryType.sale ? Colors.blue : Colors.orange.shade800)),
           title: Text(entry.category, style: const TextStyle(fontWeight: FontWeight.w700)),
           subtitle: Text('${formatDate(entry.date)}${entry.memo.isEmpty ? '' : '  •  ${entry.memo}'}${entry.createdAt == null ? '' : '\n登録: ${formatDate(entry.createdAt!)}'}'),
           isThreeLine: entry.createdAt != null,
-          trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-            Text(formatCurrency(entry.amount), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-            PopupMenuButton<String>(onSelected: (value) => value == 'edit' ? onEdit(entry) : onDelete(entry), itemBuilder: (_) => const [PopupMenuItem(value: 'edit', child: Text('編集')), PopupMenuItem(value: 'delete', child: Text('削除'))]),
-          ]),
+          trailing: _EntryMenu(entry: entry, onEdit: onEdit, onDelete: onDelete),
         ),
-        if (entry != items.last) const Divider(height: 1, indent: 76),
-      ])),
-    ]),
-  );
+        Padding(padding: const EdgeInsets.fromLTRB(20, 0, 20, 18), child: Align(alignment: Alignment.centerRight, child: Text(formatCurrency(entry.amount), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)))),
+      ])))).toList());
+  });
 }
+
+class _EntryTable extends StatelessWidget {
+  const _EntryTable({required this.items, required this.onEdit, required this.onDelete});
+  final List<FinanceEntry> items;
+  final ValueChanged<FinanceEntry> onEdit, onDelete;
+  @override Widget build(BuildContext context) => Card(child: ClipRRect(borderRadius: BorderRadius.circular(16), child: Table(
+    columnWidths: const {0: FixedColumnWidth(130), 1: FlexColumnWidth(1.2), 2: FlexColumnWidth(2), 3: FixedColumnWidth(150), 4: FixedColumnWidth(64)},
+    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+    children: [
+      TableRow(decoration: const BoxDecoration(color: Color(0xFFF8FAFC)), children: const [_Header('日付'), _Header('カテゴリ'), _Header('メモ'), _Header('金額', right: true), SizedBox(height: 52)]),
+      ...items.map((entry) => TableRow(decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE7ECF3)))), children: [
+        _Cell(formatDate(entry.date)), _Cell(entry.category, bold: true), _Cell(entry.memo.isEmpty ? '—' : entry.memo), _Cell(formatCurrency(entry.amount), bold: true, right: true), _EntryMenu(entry: entry, onEdit: onEdit, onDelete: onDelete),
+      ])),
+    ],
+  )));
+}
+
+class _Header extends StatelessWidget { const _Header(this.text, {this.right = false}); final String text; final bool right; @override Widget build(BuildContext context) => Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text(text, textAlign: right ? TextAlign.right : null, style: TextStyle(color: Colors.blueGrey.shade600, fontWeight: FontWeight.w700))); }
+class _Cell extends StatelessWidget { const _Cell(this.text, {this.bold = false, this.right = false}); final String text; final bool bold, right; @override Widget build(BuildContext context) => Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18), child: Text(text, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: right ? TextAlign.right : null, style: TextStyle(fontWeight: bold ? FontWeight.w700 : null, color: bold ? null : Colors.blueGrey.shade700))); }
+class _EntryMenu extends StatelessWidget { const _EntryMenu({required this.entry, required this.onEdit, required this.onDelete}); final FinanceEntry entry; final ValueChanged<FinanceEntry> onEdit, onDelete; @override Widget build(BuildContext context) => PopupMenuButton<String>(tooltip: '操作', onSelected: (value) => value == 'edit' ? onEdit(entry) : onDelete(entry), itemBuilder: (_) => const [PopupMenuItem(value: 'edit', child: ListTile(leading: Icon(Icons.edit_outlined), title: Text('編集'), contentPadding: EdgeInsets.zero)), PopupMenuItem(value: 'delete', child: ListTile(leading: Icon(Icons.delete_outline), title: Text('削除'), contentPadding: EdgeInsets.zero))]); }
 
 class _EmptyCard extends StatelessWidget {
   const _EmptyCard({required this.label, required this.onAdd});
