@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
-import '../../../core/widgets/feature_scaffold.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/widgets/page_header.dart';
+import '../../organization/application/organization_providers.dart';
+import '../application/business_providers.dart';
+import '../domain/business_profile.dart';
 
-class BusinessScreen extends StatelessWidget {
-  const BusinessScreen({super.key});
-  @override
-  Widget build(BuildContext context) => const FeatureScaffold(
-    title: '事業者情報',
-    subtitle: '事業者の基本情報とメンバーを管理します。',
-    icon: Icons.business_outlined,
-    sections: ['基本情報', 'メンバー'],
-  );
+class BusinessScreen extends ConsumerStatefulWidget { const BusinessScreen({super.key}); @override ConsumerState<BusinessScreen> createState() => _BusinessScreenState(); }
+class _BusinessScreenState extends ConsumerState<BusinessScreen> {
+  final key = GlobalKey<FormState>();
+  final controllers = List.generate(6, (_) => TextEditingController());
+  bool initialized = false, saving = false;
+  @override void dispose() { for (final c in controllers) { c.dispose(); } super.dispose(); }
+  void fill(BusinessProfile profile) { if (initialized) return; initialized = true; final values = [profile.name, profile.representative, profile.industry, profile.address, profile.phone, profile.email]; for (var i=0; i<values.length; i++) { controllers[i].text = values[i]; } }
+  Future<void> save() async { if (!key.currentState!.validate()) return; final id = ref.read(organizationIdProvider).value; if (id == null) { message('組織情報を読み込めませんでした。'); return; } setState(() => saving = true); try { await ref.read(businessRepositoryProvider).save(id, BusinessProfile(name: controllers[0].text, representative: controllers[1].text, industry: controllers[2].text, address: controllers[3].text, phone: controllers[4].text, email: controllers[5].text)); if (mounted) message('事業情報を更新しました。'); } catch (_) { if (mounted) message('事業情報を保存できませんでした。'); } finally { if (mounted) setState(() => saving = false); } }
+  void message(String value) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(value)));
+  @override Widget build(BuildContext context) { final profile = ref.watch(businessProfileProvider); return SingleChildScrollView(padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 600 ? 16 : 32), child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 850), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const PageHeader(title: '事業情報', subtitle: '請求・レポートの基礎となる事業者情報を管理します。'), const SizedBox(height: 24), profile.when(loading: () => const Card(child: SizedBox(height: 360, child: Center(child: CircularProgressIndicator()))), error: (_,_) => const Card(child: Padding(padding: EdgeInsets.all(48), child: Center(child: Text('事業情報を読み込めませんでした。')))), data: (data) { if (data == null) return const Card(child: Padding(padding: EdgeInsets.all(48), child: Center(child: Text('組織情報が見つかりません。')))); fill(data); return Card(child: Padding(padding: const EdgeInsets.all(28), child: Form(key: key, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Text('基本情報', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)), const SizedBox(height: 24), _field(0, '事業名', Icons.business_outlined, required: true), _field(1, '代表者名', Icons.person_outline), _field(2, '業種', Icons.category_outlined), _field(3, '住所', Icons.location_on_outlined), _field(4, '電話番号', Icons.phone_outlined, keyboard: TextInputType.phone), _field(5, 'メールアドレス', Icons.mail_outline, keyboard: TextInputType.emailAddress), const SizedBox(height: 8), Align(alignment: Alignment.centerRight, child: FilledButton.icon(onPressed: saving ? null : save, icon: saving ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.save_outlined), label: const Text('変更を保存')))])))); })])))); }
+  Widget _field(int index, String label, IconData icon, {bool required = false, TextInputType? keyboard}) => Padding(padding: const EdgeInsets.only(bottom: 16), child: TextFormField(controller: controllers[index], keyboardType: keyboard, decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)), validator: required ? (v) => v == null || v.trim().isEmpty ? '$labelを入力してください。' : null : null));
 }

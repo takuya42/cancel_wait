@@ -10,6 +10,19 @@ service cloud.firestore {
       return isMember(organizationId)
         && get(/databases/$(database)/documents/organizations/$(organizationId)/members/$(request.auth.uid)).data.role == 'owner';
     }
+    function validEntry() {
+      return request.resource.data.keys().hasOnly([
+          'date', 'amount', 'category', 'memo', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.date is timestamp
+        && request.resource.data.amount is int
+        && request.resource.data.amount > 0
+        && request.resource.data.category is string
+        && request.resource.data.category.size() > 0
+        && request.resource.data.category.size() <= 100
+        && request.resource.data.memo is string
+        && request.resource.data.memo.size() <= 2000;
+    }
 
     match /users/{userId} {
       allow create: if signedIn() && request.auth.uid == userId
@@ -35,6 +48,17 @@ service cloud.firestore {
           && getAfter(/databases/$(database)/documents/organizations/$(organizationId)).data.ownerUid == request.auth.uid;
         allow read: if isMember(organizationId);
         allow update, delete: if isOwner(organizationId);
+      }
+
+      // Financial data is isolated below an organization. Membership is
+      // checked for every read and write, preventing cross-organization access.
+      match /sales/{saleId} {
+        allow read, delete: if isMember(organizationId);
+        allow create, update: if isMember(organizationId) && validEntry();
+      }
+      match /expenses/{expenseId} {
+        allow read, delete: if isMember(organizationId);
+        allow create, update: if isMember(organizationId) && validEntry();
       }
     }
 

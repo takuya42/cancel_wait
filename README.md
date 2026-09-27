@@ -1,6 +1,6 @@
 # 経営管理ツール
 
-小規模事業者・経営者向けの Flutter Web 管理画面です。フェーズ1では認証、レスポンシブな管理画面、各経営管理機能の画面基盤を提供します。
+小規模事業者・経営者向けの Flutter Web 管理画面です。Firebase Authentication と組織単位の Firestore データを利用し、売上・経費管理、ダッシュボード、レポート、事業情報管理を提供します。
 
 ## Firebase Web 設定
 
@@ -17,6 +17,9 @@ flutter run -d chrome \
 ```
 
 アカウント作成時に `users/{uid}`、`organizations/{organizationId}`、`organizations/{organizationId}/members/{uid}` を一括作成します。ルートの `firestore.rules` を Firebase CLI でデプロイしてから利用してください。
+
+売上と経費は、それぞれ `organizations/{organizationId}/sales` と
+`organizations/{organizationId}/expenses` に保存されます。Firestore Rules は組織メンバーだけにアクセスを許可し、金額や文字数も検証します。
 
 ## 開発用テストログイン
 
