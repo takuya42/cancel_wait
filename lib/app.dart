@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'router/app_router.dart';
-import 'theme/app_theme.dart';
+import 'core/router/app_router.dart';
+import 'core/theme/app_theme.dart';
 
-class CancelWaitApp extends ConsumerWidget {
-  const CancelWaitApp({super.key});
+class BusinessManagementApp extends ConsumerWidget {
+  const BusinessManagementApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
-      title: 'CancelWait',
+      title: '経営管理ツール',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       routerConfig: ref.watch(appRouterProvider),

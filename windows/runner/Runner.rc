@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "cancel_wait" "\0"
+            VALUE "FileDescription", "経営管理ツール" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "cancel_wait" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
             VALUE "OriginalFilename", "cancel_wait.exe" "\0"
-            VALUE "ProductName", "cancel_wait" "\0"
+            VALUE "ProductName", "経営管理ツール" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -1,6 +1,6 @@
-# cancel_wait
+# 経営管理ツール
 
-CancelWait の店舗向け Flutter Web 管理画面です。
+小規模事業者・経営者向けの Flutter Web 管理画面です。フェーズ1では認証、レスポンシブな管理画面、各経営管理機能の画面基盤を提供します。
 
 ## Firebase Web 設定
 
@@ -16,22 +16,4 @@ flutter run -d chrome \
   --dart-define=FIREBASE_STORAGE_BUCKET=...
 ```
 
-Firestore には `shops/{shopId}` と `users/{uid}` が作成されます。`users/{uid}.shopId` が、ログインユーザーがアクセス可能な店舗を決定します。ルートの `firestore.rules` を Firebase CLI でデプロイしてから利用してください。
-
-テストログインは Firebase Authentication と Firestore を一切使用せず、空のインメモリ状態から各管理機能を試せます。テストモード中に登録したデータは Firestore に保存されません。リリースビルドでは自動で非表示になります。開発ビルドでも無効にする場合は `lib/config/app_config.dart` の `enableDemoLogin` を変更してください。
-
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+アカウント作成時に `users/{uid}`、`organizations/{organizationId}`、`organizations/{organizationId}/members/{uid}` を一括作成します。ルートの `firestore.rules` を Firebase CLI でデプロイしてから利用してください。
