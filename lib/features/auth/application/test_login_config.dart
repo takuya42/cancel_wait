@@ -3,22 +3,21 @@ import 'package:flutter/foundation.dart';
 /// Build-time configuration for the development-only test login.
 class TestLoginConfig {
   const TestLoginConfig({
-    required this.email,
-    required this.password,
-    required this.isReleaseMode,
+    required this.isDebugMode,
+    required this.enabledByEnvironment,
   });
 
   factory TestLoginConfig.fromEnvironment() => const TestLoginConfig(
-        email: String.fromEnvironment('TEST_LOGIN_EMAIL'),
-        password: String.fromEnvironment('TEST_LOGIN_PASSWORD'),
-        isReleaseMode: kReleaseMode,
+        isDebugMode: kDebugMode,
+        enabledByEnvironment: bool.fromEnvironment(
+          'ENABLE_TEST_LOGIN',
+          defaultValue: true,
+        ),
       );
 
-  final String email;
-  final String password;
-  final bool isReleaseMode;
+  final bool isDebugMode;
+  final bool enabledByEnvironment;
 
-  /// Release builds never expose the test login, even if defines are supplied.
-  bool get isEnabled =>
-      !isReleaseMode && email.trim().isNotEmpty && password.isNotEmpty;
+  /// Profile and release builds never expose the test login.
+  bool get isEnabled => isDebugMode && enabledByEnvironment;
 }

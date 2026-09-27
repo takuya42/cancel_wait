@@ -26,9 +26,22 @@ class RegistrationNotifier extends Notifier<bool> {
 final registrationInProgressProvider =
     NotifierProvider<RegistrationNotifier, bool>(RegistrationNotifier.new);
 
+class TestModeNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void enable() => state = true;
+  void disable() => state = false;
+}
+
+final testModeProvider =
+    NotifierProvider<TestModeNotifier, bool>(TestModeNotifier.new);
+
 enum SessionStatus { loading, signedOut, authenticated }
 
 final sessionStatusProvider = Provider<SessionStatus>((ref) {
+  if (ref.watch(testModeProvider)) return SessionStatus.authenticated;
+
   return ref.watch(authUserProvider).when(
     data: (user) => user == null
         ? SessionStatus.signedOut
@@ -48,15 +61,19 @@ class AuthController {
       .read(authRepositoryProvider)
       .signIn(email: email, password: password);
 
-  Future<void> testLogin() {
+  void testLogin() {
     final config = ref.read(testLoginConfigProvider);
     if (!config.isEnabled) {
       throw StateError('Test login is not configured for this build.');
     }
-    return ref
-        .read(authRepositoryProvider)
-        .signIn(email: config.email, password: config.password);
+    ref.read(testModeProvider.notifier).enable();
   }
 
-  Future<void> logout() => ref.read(authRepositoryProvider).signOut();
+  Future<void> logout() {
+    if (ref.read(testModeProvider)) {
+      ref.read(testModeProvider.notifier).disable();
+      return Future.value();
+    }
+    return ref.read(authRepositoryProvider).signOut();
+  }
 }
