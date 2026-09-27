@@ -27,8 +27,7 @@ class _DashboardContent extends StatelessWidget {
     bool thisMonth(FinanceEntry e) => e.date.year == now.year && e.date.month == now.month;
     final monthlySales = sales.where(thisMonth).fold(0, (sum, e) => sum + e.amount);
     final monthlyExpenses = expenses.where(thisMonth).fold(0, (sum, e) => sum + e.amount);
-    final target = 1000000;
-    final summaries = [('今月の売上', formatCurrency(monthlySales), Icons.trending_up_rounded, const Color(0xFF2563EB)), ('今月の経費', formatCurrency(monthlyExpenses), Icons.receipt_long_outlined, const Color(0xFFF59E0B)), ('今月の利益', formatCurrency(monthlySales - monthlyExpenses), Icons.account_balance_wallet_outlined, const Color(0xFF10B981)), ('目標達成率', '${(monthlySales / target * 100).clamp(0, 999).toStringAsFixed(1)}%', Icons.flag_outlined, const Color(0xFF7C3AED))];
+    final summaries = [('今月の売上', formatCurrency(monthlySales), Icons.trending_up_rounded, const Color(0xFF2563EB)), ('今月の経費', formatCurrency(monthlyExpenses), Icons.receipt_long_outlined, const Color(0xFFF59E0B)), ('今月の利益', formatCurrency(monthlySales - monthlyExpenses), Icons.account_balance_wallet_outlined, const Color(0xFF10B981)), ('目標達成率', '未設定', Icons.flag_outlined, const Color(0xFF7C3AED))];
     return SingleChildScrollView(padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 600 ? 16 : 32), child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 1120), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const PageHeader(title: 'ダッシュボード', subtitle: '事業の最新状況を、ひと目で確認できます。'), const SizedBox(height: 24),
       LayoutBuilder(builder: (_, constraints) { final columns = constraints.maxWidth >= 900 ? 4 : constraints.maxWidth >= 520 ? 2 : 1; final width = (constraints.maxWidth - (columns - 1) * 16) / columns; return Wrap(spacing: 16, runSpacing: 16, children: summaries.map((item) => SizedBox(width: width, child: _SummaryCard(title: item.$1, value: item.$2, icon: item.$3, color: item.$4))).toList()); }),
@@ -58,7 +57,7 @@ class _RecentCard extends StatelessWidget {
           Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           if (items.isEmpty)
-            const SizedBox(height: 120, child: Center(child: Text('データはまだありません')))
+            SizedBox(height: 120, child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.inbox_outlined, color: Colors.blueGrey.shade300), const SizedBox(height: 8), Text('$titleデータはまだありません'.replaceFirst('最近の', ''))])))
           else
             ...items.map((entry) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),

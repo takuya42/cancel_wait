@@ -38,7 +38,22 @@ class _ReportBody extends StatelessWidget {
       const SizedBox(height: 20),
       Card(child: Padding(padding: const EdgeInsets.all(24), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('月別推移', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)), const SizedBox(height: 20), MonthlyChart(data: buildMonthlyTotals(allSales.where((e) => period != ReportPeriod.thisYear || e.date.year == now.year).toList(), allExpenses.where((e) => period != ReportPeriod.thisYear || e.date.year == now.year).toList(), months: period == ReportPeriod.thisYear ? 12 : 6, now: period == ReportPeriod.thisYear ? DateTime(now.year, 12) : selectedMonth))]))),
       const SizedBox(height: 20),
-      Card(child: Padding(padding: const EdgeInsets.all(24), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('カテゴリ別集計', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)), const SizedBox(height: 12), if (categories.isEmpty) const SizedBox(height: 100, child: Center(child: Text('対象期間のデータがありません'))) else ...sortedCategories.map((e) => Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Row(children: [Expanded(child: Text(e.key)), Text(formatCurrency(e.value), style: const TextStyle(fontWeight: FontWeight.bold))]))) ]))),
+      Card(child: Padding(padding: const EdgeInsets.all(24), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('カテゴリ別集計', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)), const SizedBox(height: 18), if (categories.isEmpty) const SizedBox(height: 120, child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.donut_large_outlined, color: Colors.blueGrey), SizedBox(height: 10), Text('対象期間のデータがありません')])) ) else ...sortedCategories.map((e) => _CategoryBar(label: e.key, value: e.value, maxValue: sortedCategories.first.value, expense: e.key.startsWith('経費・'))) ]))),
     ]);
+  }
+}
+
+class _CategoryBar extends StatelessWidget {
+  const _CategoryBar({required this.label, required this.value, required this.maxValue, required this.expense});
+  final String label;
+  final int value, maxValue;
+  final bool expense;
+  @override Widget build(BuildContext context) {
+    final color = expense ? const Color(0xFFF59E0B) : const Color(0xFF2563EB);
+    return Padding(padding: const EdgeInsets.only(bottom: 18), child: Column(children: [
+      Row(children: [Expanded(child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600))), Text(formatCurrency(value), style: const TextStyle(fontWeight: FontWeight.w700))]),
+      const SizedBox(height: 8),
+      ClipRRect(borderRadius: BorderRadius.circular(6), child: LinearProgressIndicator(value: maxValue == 0 ? 0 : value / maxValue, minHeight: 8, color: color, backgroundColor: color.withValues(alpha: .1))),
+    ]));
   }
 }
