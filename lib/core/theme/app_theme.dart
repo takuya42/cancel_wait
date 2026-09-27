@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppTheme {
-  static const _primary = Color(0xFF176B5B);
+  static const _primary = Color(0xFF2563EB);
 
   static ThemeData get light {
     final scheme = ColorScheme.fromSeed(
@@ -12,11 +12,12 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: const Color(0xFFF5F7F6),
+      scaffoldBackgroundColor: const Color(0xFFF4F7FB),
       fontFamily: 'sans-serif',
       cardTheme: CardThemeData(
         color: Colors.white,
-        elevation: 0,
+        elevation: 1,
+        shadowColor: const Color(0x182563EB),
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -32,6 +33,8 @@ abstract final class AppTheme {
           borderSide: const BorderSide(color: Color(0xFFD9E2DF)),
         ),
       ),
+      filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)))),
+      outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)))),
     );
   }
 }
