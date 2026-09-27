@@ -4,6 +4,17 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('authRedirect', () {
+    test('routes the root page according to authentication state', () {
+      expect(
+        authRedirect(session: SessionStatus.signedOut, location: '/'),
+        '/login',
+      );
+      expect(
+        authRedirect(session: SessionStatus.authenticated, location: '/'),
+        '/dashboard',
+      );
+    });
+
     test('allows signed-out users to open authentication pages', () {
       expect(authRedirect(session: SessionStatus.signedOut, location: '/login'), isNull);
       expect(authRedirect(session: SessionStatus.signedOut, location: '/register'), isNull);

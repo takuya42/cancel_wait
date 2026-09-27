@@ -19,6 +19,9 @@ String? authRedirect({
   bool registrationInProgress = false,
 }) {
   if (session == SessionStatus.loading) return null;
+  if (location == '/') {
+    return session == SessionStatus.authenticated ? '/dashboard' : '/login';
+  }
   final isAuthPage = location == '/login' || location == '/register';
   final authenticated = session == SessionStatus.authenticated;
   if (!authenticated && !isAuthPage) return '/login';
@@ -36,7 +39,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ..listen(sessionStatusProvider, (_, _) => notifier.refresh())
     ..listen(registrationInProgressProvider, (_, _) => notifier.refresh());
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/dashboard',
     refreshListenable: notifier,
     redirect: (_, state) => authRedirect(
       session: ref.read(sessionStatusProvider),
