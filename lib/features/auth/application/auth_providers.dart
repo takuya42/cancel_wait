@@ -3,6 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/auth_repository.dart';
+import 'test_login_config.dart';
+
+final testLoginConfigProvider = Provider(
+  (ref) => TestLoginConfig.fromEnvironment(),
+);
 
 final authRepositoryProvider = Provider(
   (ref) => AuthRepository(FirebaseAuth.instance, FirebaseFirestore.instance),
@@ -42,5 +47,16 @@ class AuthController {
   Future<void> login(String email, String password) => ref
       .read(authRepositoryProvider)
       .signIn(email: email, password: password);
+
+  Future<void> testLogin() {
+    final config = ref.read(testLoginConfigProvider);
+    if (!config.isEnabled) {
+      throw StateError('Test login is not configured for this build.');
+    }
+    return ref
+        .read(authRepositoryProvider)
+        .signIn(email: config.email, password: config.password);
+  }
+
   Future<void> logout() => ref.read(authRepositoryProvider).signOut();
 }

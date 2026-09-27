@@ -31,6 +31,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _testLogin() async {
+    setState(() => _loading = true);
+    try {
+      await ref.read(authControllerProvider).testLogin();
+      if (mounted) context.go('/dashboard');
+    } catch (error) {
+      if (mounted) _showMessage(authErrorMessage(error));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   Future<void> _resetPassword() async {
     final controller = TextEditingController(text: _email.text);
     final email = await showDialog<String>(context: context, builder: (context) => AlertDialog(
@@ -50,7 +62,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _showMessage(String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 
-  @override Widget build(BuildContext context) => Scaffold(body: Center(child: SingleChildScrollView(
+  @override Widget build(BuildContext context) {
+    final testLoginEnabled = ref.watch(testLoginConfigProvider).isEnabled;
+    return Scaffold(body: Center(child: SingleChildScrollView(
     padding: const EdgeInsets.all(24),
     child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 440), child: Card(child: Padding(
       padding: const EdgeInsets.all(36),
@@ -69,8 +83,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         TextButton(onPressed: _loading ? null : _resetPassword, child: const Text('パスワードを忘れた方')),
         const Divider(height: 28),
         OutlinedButton(onPressed: _loading ? null : () => context.go('/register'), child: const Text('事業者アカウントを作成')),
-
+        if (testLoginEnabled) ...[
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            key: const Key('test-login-button'),
+            onPressed: _loading ? null : _testLogin,
+            icon: const Icon(Icons.science_outlined),
+            label: const Text('テストログイン'),
+          ),
+        ],
       ])),
     ))),
   )));
+  }
 }
