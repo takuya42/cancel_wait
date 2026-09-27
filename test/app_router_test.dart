@@ -1,5 +1,6 @@
 import 'package:business_management_tool/core/router/app_router.dart';
 import 'package:business_management_tool/features/auth/application/auth_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -38,6 +39,26 @@ void main() {
     });
     test('allows authenticated users to open management pages', () {
       expect(authRedirect(session: SessionStatus.authenticated, location: '/sales'), isNull);
+    });
+
+    test('test mode is represented as an authenticated session', () {
+      final container = ProviderContainer(
+        overrides: [
+          authUserProvider.overrideWith((ref) => Stream.value(null)),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      container.read(testModeProvider.notifier).enable();
+
+      expect(container.read(sessionStatusProvider), SessionStatus.authenticated);
+      expect(
+        authRedirect(
+          session: container.read(sessionStatusProvider),
+          location: '/settings',
+        ),
+        isNull,
+      );
     });
   });
 }

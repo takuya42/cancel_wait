@@ -3,39 +3,28 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('TestLoginConfig', () {
-    test('is enabled only when both credentials exist in a non-release build', () {
+    test('is enabled when the debug build flag and environment flag are on', () {
       expect(
         const TestLoginConfig(
-          email: 'test@example.com',
-          password: 'password',
-          isReleaseMode: false,
+          isDebugMode: true,
+          enabledByEnvironment: true,
         ).isEnabled,
         isTrue,
       );
       expect(
         const TestLoginConfig(
-          email: '',
-          password: 'password',
-          isReleaseMode: false,
-        ).isEnabled,
-        isFalse,
-      );
-      expect(
-        const TestLoginConfig(
-          email: 'test@example.com',
-          password: '',
-          isReleaseMode: false,
+          isDebugMode: true,
+          enabledByEnvironment: false,
         ).isEnabled,
         isFalse,
       );
     });
 
-    test('is always disabled in a release build', () {
+    test('is always disabled outside a debug build', () {
       expect(
         const TestLoginConfig(
-          email: 'test@example.com',
-          password: 'password',
-          isReleaseMode: true,
+          isDebugMode: false,
+          enabledByEnvironment: true,
         ).isEnabled,
         isFalse,
       );

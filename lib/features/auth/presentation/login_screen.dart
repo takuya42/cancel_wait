@@ -31,15 +31,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  Future<void> _testLogin() async {
-    setState(() => _loading = true);
+  void _testLogin() {
     try {
-      await ref.read(authControllerProvider).testLogin();
-      if (mounted) context.go('/dashboard');
+      ref.read(authControllerProvider).testLogin();
+      context.go('/dashboard');
     } catch (error) {
-      if (mounted) _showMessage(authErrorMessage(error));
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      _showMessage(authErrorMessage(error));
     }
   }
 
@@ -80,11 +77,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         TextFormField(controller: _password, obscureText: _obscurePassword, autofillHints: const [AutofillHints.password], decoration: InputDecoration(labelText: 'パスワード', prefixIcon: const Icon(Icons.lock_outline), suffixIcon: IconButton(onPressed: () => setState(() => _obscurePassword = !_obscurePassword), icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined))), validator: (value) => value == null || value.isEmpty ? 'パスワードを入力してください。' : null, onFieldSubmitted: (_) => _login()),
         const SizedBox(height: 24),
         FilledButton(onPressed: _loading ? null : _login, style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)), child: _loading ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('ログイン')),
-        TextButton(onPressed: _loading ? null : _resetPassword, child: const Text('パスワードを忘れた方')),
-        const Divider(height: 28),
-        OutlinedButton(onPressed: _loading ? null : () => context.go('/register'), child: const Text('事業者アカウントを作成')),
         if (testLoginEnabled) ...[
-          const SizedBox(height: 12),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text('または', textAlign: TextAlign.center),
+          ),
           OutlinedButton.icon(
             key: const Key('test-login-button'),
             onPressed: _loading ? null : _testLogin,
@@ -92,6 +89,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             label: const Text('テストログイン'),
           ),
         ],
+        TextButton(onPressed: _loading ? null : _resetPassword, child: const Text('パスワードを忘れた方')),
+        const Divider(height: 28),
+        OutlinedButton(onPressed: _loading ? null : () => context.go('/register'), child: const Text('事業者アカウントを作成')),
       ])),
     ))),
   )));
